@@ -1,25 +1,23 @@
 import requests
 import pycountry
+import os
+from dotenv import load_dotenv
 
 
 class WeatherBot:
     '''
     WeatherBot:
         class represents a bot that retrieves and displays weather information.
+    http://api.openweathermap.org/geo/1.0/direct?q=gainesville,ga,us&limit=1&appid=9f4ec0d8b781f45ba6b26d7c23db81dc
     '''
-
-    API_KEY = "9f4ec0d8b781f45ba6b26d7c23db81dc"
+    load_dotenv()
+    API_KEY = os.getenv('API_KEY')
     GEOCODINGAPI = "http://api.openweathermap.org/geo/1.0/direct?q="
     CURRENTWEATHERAPI = "https://api.openweathermap.org/data/2.5/weather?"
 
     def __init__(self, city_name: str, country_code: str, state_name: str):
         '''
         Initializes a new instance of the WeatherBot class.
-
-        Args:
-            city_name (str): The name of the city.
-            country_code (str): The country code (e.g., US, GB).
-            state_name (str): The name of the state (optional).
         '''
         self._city_name = city_name
         self._country_code = country_code
@@ -70,8 +68,6 @@ class WeatherBot:
         '''
         Retrieves the latitude and longitude coordinates for the location.
         '''
-        self.validate_country_code()
-        self.validate_state_name()
 
         if self._state_name == '' or self._country_code != 'US':
             url = (
@@ -82,7 +78,7 @@ class WeatherBot:
             url = (
                 f"{WeatherBot.GEOCODINGAPI}{self._city_name},"
                 f"{self._state_name},{self._country_code}"
-                f"&limit=5&appid={WeatherBot.API_KEY}"
+                f"&limit=1&appid={WeatherBot.API_KEY}"
             )
 
         response_data = self.make_api_request(url)
@@ -93,18 +89,24 @@ class WeatherBot:
             return latitude, longitude
 
         raise Exception(
-            "Location data not found for the provided city, country,"
+            "Location data not found for the provided city, country, "
             "and/or state"
         )
 
-    def current_weather(self, lat: float, lon: float) -> dict:
+    def current_weather(
+            self, lat: float, lon: float, unit_system: str
+    ) -> dict:
         '''
         Retrieves the current weather information.
         '''
-        if self._state_name == '' or self._country_code != 'US':
-            units = "&units=metric"
+        if unit_system == 'metric':
+            units = f"&units={unit_system}"
+            temperature_unit = "°C"
+            speed_unit = "km/h"
         else:
-            units = '&units=imperial'
+            units = f'&units={unit_system}'
+            temperature_unit = "°F"
+            speed_unit = "mph"
 
         url = (
             f"{WeatherBot.CURRENTWEATHERAPI}lat={lat}&lon={lon}"
@@ -118,8 +120,10 @@ class WeatherBot:
                 "description": response_data["weather"][0]["description"],
                 "temp": response_data["main"]["temp"],
                 "feels_like": response_data["main"]["feels_like"],
+                "temperature_unit": temperature_unit,
                 "humidity": response_data["main"]["humidity"],
-                "wind_speed": response_data["wind"]["speed"]
+                "wind_speed": response_data["wind"]["speed"],
+                "speed_unit": speed_unit
             }
 
     def print_weather(self, weather_data: dict):
@@ -144,6 +148,8 @@ class WeatherBot:
 def main():
     '''
     Entry point of the program
+    Message to programmer: change code to accomodate new current
+    weather function
     '''
     print('Weather Bot')
     while True:
@@ -163,7 +169,9 @@ def main():
 
             latitude, longitude = weather_bot.location()
 
-            current_weather = weather_bot.current_weather(latitude, longitude)
+            current_weather = weather_bot.current_weather(
+                latitude, longitude, "imperial"
+            )
             if current_weather:
                 weather_bot.print_weather(current_weather)
         except Exception as e:
