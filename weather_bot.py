@@ -8,7 +8,6 @@ class WeatherBot:
     '''
     WeatherBot:
         class represents a bot that retrieves and displays weather information.
-    http://api.openweathermap.org/geo/1.0/direct?q=gainesville,ga,us&limit=1&appid=9f4ec0d8b781f45ba6b26d7c23db81dc
     '''
     load_dotenv()
     API_KEY = os.getenv('API_KEY')
